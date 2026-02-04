@@ -758,6 +758,33 @@ namespace IngameDebugConsole
 				}
 			}
 #endif
+
+			// Handle Tab key for autocomplete in Update (before InputField processes input in LateUpdate)
+			// This prevents Tab from being used for UI navigation when the command input field is focused
+			if( commandInputField.isFocused )
+			{
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+				if( Keyboard.current != null && Keyboard.current[Key.Tab].wasPressedThisFrame )
+#else
+				if( Input.GetKeyDown( KeyCode.Tab ) )
+#endif
+				{
+					string currentText = commandInputField.text;
+					if( !string.IsNullOrEmpty( currentText ) )
+					{
+						if( string.IsNullOrEmpty( commandInputFieldAutoCompleteBase ) )
+							commandInputFieldAutoCompleteBase = currentText;
+
+						string autoCompletedCommand = DebugLogConsole.GetAutoCompleteCommand( commandInputFieldAutoCompleteBase, currentText );
+						if( !string.IsNullOrEmpty( autoCompletedCommand ) && autoCompletedCommand != currentText )
+						{
+							commandInputFieldAutoCompletedNow = true;
+							commandInputField.text = autoCompletedCommand;
+							commandInputField.stringPosition = autoCompletedCommand.Length;
+						}
+					}
+				}
+			}
 		}
 
 		private void LateUpdate()
