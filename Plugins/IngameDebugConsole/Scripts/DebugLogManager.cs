@@ -549,6 +549,7 @@ namespace IngameDebugConsole
 			// Register to UI events
 			commandInputField.onValidateInput += OnValidateCommand;
 			commandInputField.onValueChanged.AddListener( OnEditCommand );
+			commandInputField.onSubmit.AddListener( OnSubmitCommand );
 			commandInputField.onEndEdit.AddListener( OnEndEditCommand );
 			hideButton.onClick.AddListener( HideLogWindow );
 			clearButton.onClick.AddListener( ClearLogs );
@@ -1616,6 +1617,30 @@ namespace IngameDebugConsole
 
             commandSuggestionsContainer.gameObject.SetActive(false);
         }
+
+		// Command input field submitted (Enter key pressed)
+		private void OnSubmitCommand( string command )
+		{
+			if( string.IsNullOrEmpty( command ) )
+				return;
+
+			// Add to command history
+			if( commandHistory.Count == 0 || commandHistory[commandHistory.Count - 1] != command )
+				commandHistory.Add( command );
+
+			commandHistoryIndex = -1;
+			unfinishedCommand = null;
+
+			// Execute the command
+			DebugLogConsole.ExecuteCommand( command );
+
+			// Clear the command field if needed
+			if( clearCommandAfterExecution )
+				commandInputField.text = string.Empty;
+
+			// Snap to bottom
+			SnapToBottom = true;
+		}
 
 		// Debug window is being resized,
 		// Set the sizeDelta property of the window accordingly while
