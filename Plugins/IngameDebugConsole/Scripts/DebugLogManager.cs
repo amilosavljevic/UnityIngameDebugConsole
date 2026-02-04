@@ -546,6 +546,14 @@ namespace IngameDebugConsole
 			if( commandSuggestionsContainer.gameObject.activeSelf )
 				commandSuggestionsContainer.gameObject.SetActive( false );
 
+			// Ensure the command input field is in single-line mode so Enter submits instead of adding newlines
+			commandInputField.lineType = TMP_InputField.LineType.SingleLine;
+
+			// On mobile, set keyboard type to ensure the return key says "Done" and triggers submission
+#if UNITY_IOS || UNITY_ANDROID
+			commandInputField.keyboardType = TouchScreenKeyboardType.Default;
+#endif
+
 			// Register to UI events
 			commandInputField.onValidateInput += OnValidateCommand;
 			commandInputField.onValueChanged.AddListener( OnEditCommand );
@@ -1027,25 +1035,8 @@ namespace IngameDebugConsole
 			}
 			else if( addedChar == '\n' ) // Command is submitted
 			{
-				// Clear the command field
-				if( clearCommandAfterExecution )
-					commandInputField.text = string.Empty;
-
-				if( text.Length > 0 )
-				{
-					if( commandHistory.Count == 0 || commandHistory[commandHistory.Count - 1] != text )
-						commandHistory.Add( text );
-
-					commandHistoryIndex = -1;
-					unfinishedCommand = null;
-
-					// Execute the command
-					DebugLogConsole.ExecuteCommand( text );
-
-					// Snap to bottom and select the latest entry
-					SnapToBottom = true;
-				}
-
+				// Prevent newline from being added to the text field
+				// Command execution is now handled by OnSubmitCommand
 				return '\0';
 			}
 
@@ -1621,8 +1612,13 @@ namespace IngameDebugConsole
 		// Command input field submitted (Enter key pressed)
 		private void OnSubmitCommand( string command )
 		{
+			Debug.Log( "[DebugConsole] OnSubmitCommand called with: \"" + command + "\"" );
+
 			if( string.IsNullOrEmpty( command ) )
+			{
+				Debug.Log( "[DebugConsole] Command was empty, ignoring" );
 				return;
+			}
 
 			// Add to command history
 			if( commandHistory.Count == 0 || commandHistory[commandHistory.Count - 1] != command )
